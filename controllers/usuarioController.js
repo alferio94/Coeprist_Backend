@@ -124,7 +124,7 @@ const changePassword = async (req, res) =>
         try
         {
             return res.json({ msg: 'Password modificado correctamente' })
-        } catch (erro)
+        } catch (error)
         {
             console.log(error);
         }
