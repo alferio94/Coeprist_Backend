@@ -5,9 +5,9 @@ const router = express.Router();
 
 router.post('/', registrarUsuario);
 router.post('/login', autenticar);
-router.get('/confirmar/:token', confirmar)
 router.post('/olvide-password/', olvidePassword)
 router.get('/perfil/', checkAuth, perfil)
+router.get('/confirmar/:token', confirmar)
 router.route('/olvide-password/:token').get(comprobarToken).post(changePassword)
 
 
