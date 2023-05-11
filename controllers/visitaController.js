@@ -120,6 +120,53 @@ const getVisitasMunicipio = async (req, res) =>
 {
     try
     {
+        const resultados = await Municipio.aggregate([
+            {
+                $lookup: {
+                    from: "visitas",
+                    localField: "_id",
+                    foreignField: "municipio",
+                    as: "visitas",
+                },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    municipio: "$name",
+                    giros: [
+                        { giro: "Hospital", visitas: { $sum: "$visitas.hospital" } },
+                        { giro: "Bar", visitas: { $sum: "$visitas.bar" } },
+                        { giro: "Clinica", visitas: { $sum: "$visitas.clinica" } },
+                        { giro: "Farmacia", visitas: { $sum: "$visitas.farmacia" } },
+                        { giro: "Restaurante", visitas: { $sum: "$visitas.restaurante" } },
+                    ],
+                },
+            },
+        ]);
+
+        res.json(resultados);
+    } catch (error)
+    {
+        console.log(error);
+        res.status(500).json({ message: "Error en el servidor" });
+    }
+}
+const getAllMunicipios = async (req, res) =>
+{
+    try
+    {
+        const municipios = await Municipio.find();
+        res.status(200).json(municipios);
+    } catch (error)
+    {
+        console.log(error);
+        res.status(500).json({ message: "Error en el servidor" });
+    }
+};
+/* const getVisitasMunicipio = async (req, res) =>
+{
+    try
+    {
         const municipios = await Municipio.find();
         const visitasPorMunicipio = await Promise.all(
             municipios.map(async municipio =>
@@ -134,7 +181,7 @@ const getVisitasMunicipio = async (req, res) =>
         console.log(error);
         return res.status(500).json({ msg: 'Error al obtener las visitas por municipio' });
     }
-}
+} */
 
 export
 {
