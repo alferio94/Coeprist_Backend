@@ -37,7 +37,8 @@ const checkAdmin = async (req, res, next) =>
         const usuario = req.usuario;
         if (!usuario.admin)
         {
-            return res.status(403).json({ msg: 'Acceso denegado' })
+            const error = new Error('Acceso Denegado')
+            return res.status(403).json({ msg: error.message })
         }
         next();
     });

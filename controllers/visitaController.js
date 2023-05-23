@@ -3,6 +3,7 @@ import Municipio from "../models/Municipio.js"
 
 const getVisitas = async (req, res) =>
 {
+
     const visitas = req.usuario.admin ?
         await Visita.find().populate({
             path: 'visitor',
@@ -151,6 +152,39 @@ const getVisitasMunicipio = async (req, res) =>
         res.status(500).json({ message: "Error en el servidor" });
     }
 }
+const getVisitasMunicipioXLSX = async (req, res) =>
+{
+    try
+    {
+        const resultados = await Municipio.aggregate([
+            {
+                $lookup: {
+                    from: "visitas",
+                    localField: "_id",
+                    foreignField: "municipio",
+                    as: "visitas",
+                },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    municipio: "$name",
+                    Hospital: { $sum: "$visitas.hospital" },
+                    Bar: { $sum: "$visitas.bar" },
+                    Clinica: { $sum: "$visitas.clinica" },
+                    Farmacia: { $sum: "$visitas.farmacia" },
+                    Restaurante: { $sum: "$visitas.restaurante" },
+                },
+            },
+        ]);
+
+        res.json(resultados);
+    } catch (error)
+    {
+        console.log(error);
+        res.status(500).json({ message: "Error en el servidor" });
+    }
+}
 const getAllMunicipios = async (req, res) =>
 {
     try
@@ -193,4 +227,5 @@ export
     getVisitasMunicipio,
     getVisitasPeriodo,
     getVisita,
+    getVisitasMunicipioXLSX
 }
