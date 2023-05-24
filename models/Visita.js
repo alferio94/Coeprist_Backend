@@ -19,7 +19,7 @@ const visitaSchema = mongoose.Schema({
         type: Date,
         default: Date.now()
     },
-    commentarios: {
+    comentarios: {
         type: String
     },
     giro: {

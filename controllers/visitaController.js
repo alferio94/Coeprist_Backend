@@ -1,5 +1,6 @@
 import Visita from "../models/Visita.js";
 import Municipio from "../models/Municipio.js"
+import mongoose from "mongoose";
 
 const getVisitas = async (req, res) =>
 {
@@ -73,11 +74,12 @@ const getVisita = async (req, res) =>
 const crearVisita = async (req, res) =>
 {
     const visita = new Visita(req.body);
-    visita.visitor = req.usuario._id;
+    console.log(visita);
     try
     {
         const visitaAlmacenada = await visita.save();
-        return res.status(201).json({ visitaAlmacenada });
+
+        return res.status(201).json({ msg: 'Visita Registrada Exitosamente' });
     }
     catch (error)
     {
@@ -152,6 +154,8 @@ const getVisitasMunicipio = async (req, res) =>
         res.status(500).json({ message: "Error en el servidor" });
     }
 }
+
+
 const getVisitasMunicipioXLSX = async (req, res) =>
 {
     try
@@ -160,32 +164,73 @@ const getVisitasMunicipioXLSX = async (req, res) =>
             {
                 $lookup: {
                     from: "visitas",
-                    localField: "_id",
-                    foreignField: "municipio",
-                    as: "visitas",
-                },
+                    let: { municipioId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ["$$municipioId", "$municipio"] }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: "$giro",
+                                visitas: { $sum: 1 }
+                            }
+                        },
+                        {
+                            $project: {
+                                _id: 0,
+                                giro: "$_id",
+                                visitas: 1
+                            }
+                        }
+                    ],
+                    as: "visitas"
+                }
             },
             {
                 $project: {
                     _id: 1,
                     municipio: "$name",
-                    Hospital: { $sum: "$visitas.hospital" },
-                    Bar: { $sum: "$visitas.bar" },
-                    Clinica: { $sum: "$visitas.clinica" },
-                    Farmacia: { $sum: "$visitas.farmacia" },
-                    Restaurante: { $sum: "$visitas.restaurante" },
-                },
-            },
+                    giros: {
+                        $map: {
+                            input: [
+                                "Hospital",
+                                "Bar",
+                                "Clinica",
+                                "Farmacia",
+                                "Restaurante"
+                            ],
+                            as: "giro",
+                            in: {
+                                giro: "$$giro",
+                                visitas: {
+                                    $reduce: {
+                                        input: "$visitas",
+                                        initialValue: 0,
+                                        in: {
+                                            $cond: [
+                                                { $eq: ["$$this.giro", "$$giro"] },
+                                                "$$this.visitas",
+                                                "$$value"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         ]);
-
         res.json(resultados);
     } catch (error)
     {
         console.log(error);
         res.status(500).json({ message: "Error en el servidor" });
     }
-}
-const getAllMunicipios = async (req, res) =>
+};
+const getAllMunicipiosList = async (req, res) =>
 {
     try
     {
@@ -227,5 +272,6 @@ export
     getVisitasMunicipio,
     getVisitasPeriodo,
     getVisita,
-    getVisitasMunicipioXLSX
+    getVisitasMunicipioXLSX,
+    getAllMunicipiosList
 }
